@@ -1,0 +1,26 @@
+# Web API
+fastapi==0.162.0
+uvicorn[standard]==0.54.0
+python-multipart==0.0.33
+
+# Settings and data validation
+pydantic==2.14.2
+pydantic-settings==2.16.2
+python-dotenv==1.2.4
+
+# Database (Neon PostgreSQL)
+sqlalchemy==2.1.8
+alembic==1.20.1
+psycopg[binary]==3.3.8
+
+# Workflow and LLMs (OpenAI extracts, Gemini reads scanned pages)
+langgraph==1.2.20
+openai==3.46.0
+google-genai==2.34.0
+
+# PDF text and page images
+pymupdf==2.1
+
+# Tests
+pytest==9.2.0
+httpx==0.28.1
