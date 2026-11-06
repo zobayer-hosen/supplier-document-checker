@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000,https://supplier-document-checker.vercel.app"
 
     # Which LLM extracts information: "openai", "gemini" or "deepseek"
-    llm_provider: Literal["openai", "gemini", "deepseek"] = "openai"
+    llm_provider: Literal["openai", "gemini", "deepseek"] = "gemini"
 
     # DeepSeek on a Modal server (OpenAI-compatible API)
     deepseek_base_url: str = ""
