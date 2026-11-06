@@ -25,7 +25,8 @@ class Settings(BaseSettings):
     max_pdf_pages: int = 100
     max_extraction_retries: int = 2
     upload_directory: str = "uploads"
-    cors_origins: str = "http://localhost:3000"
+    # Comma-separated frontend addresses allowed to call the API (local dev and the Vercel deployment)
+    cors_origins: str = "http://localhost:3000,https://supplier-document-checker.vercel.app"
 
     # Which LLM extracts information: "openai", "gemini" or "deepseek"
     llm_provider: Literal["openai", "gemini", "deepseek"] = "openai"

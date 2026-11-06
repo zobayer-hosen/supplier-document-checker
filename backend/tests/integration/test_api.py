@@ -1,8 +1,15 @@
 """The full HTTP flow, using an in-memory SQLite database and the fake LLM."""
 
+import pytest
+from fastapi.testclient import TestClient
+
+from app.api.dependencies import get_sessionmaker
+from app.core.config import Settings, get_settings
+from app.main import create_app
 from tests.conftest import SAMPLE_DATA, SAMPLE_PDFS
 
 API = "/api/v1"
+VERCEL_ORIGIN = "https://supplier-document-checker.vercel.app"
 
 
 def sample_files() -> list[tuple]:
@@ -125,3 +132,36 @@ def test_unknown_batch_returns_404_in_standard_format(client):
     response = client.get(f"{API}/batches/00000000-0000-0000-0000-000000000000")
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "BATCH_NOT_FOUND"
+
+
+@pytest.fixture
+def default_cors_client(session_factory, monkeypatch):
+    """An app built with the default CORS setting, as on a server where CORS_ORIGINS is not set."""
+    monkeypatch.setattr(get_settings(), "cors_origins", Settings.model_fields["cors_origins"].default)
+    cors_app = create_app()
+    cors_app.dependency_overrides[get_sessionmaker] = lambda: session_factory
+    with TestClient(cors_app) as test_client:
+        yield test_client
+
+
+@pytest.mark.parametrize("origin", [VERCEL_ORIGIN, "http://localhost:3000"])
+def test_frontend_origins_pass_cors(default_cors_client, origin):
+    preflight = default_cors_client.options(
+        f"{API}/dashboard",
+        headers={"Origin": origin, "Access-Control-Request-Method": "GET", "Access-Control-Request-Headers": "content-type"},
+    )
+    assert preflight.status_code == 200
+    assert preflight.headers["access-control-allow-origin"] == origin
+
+    response = default_cors_client.get(f"{API}/dashboard", headers={"Origin": origin})
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == origin
+    assert response.headers["access-control-allow-credentials"] == "true"
+
+
+def test_unknown_origin_is_refused_by_cors(default_cors_client):
+    origin = "https://someone-else.example.com"
+    preflight = default_cors_client.options(f"{API}/dashboard", headers={"Origin": origin, "Access-Control-Request-Method": "GET"})
+    assert preflight.status_code == 400
+    response = default_cors_client.get(f"{API}/dashboard", headers={"Origin": origin})
+    assert "access-control-allow-origin" not in response.headers
